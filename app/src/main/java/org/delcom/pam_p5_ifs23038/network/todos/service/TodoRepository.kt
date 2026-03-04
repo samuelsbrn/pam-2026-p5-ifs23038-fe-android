@@ -1,7 +1,5 @@
 package org.delcom.pam_p5_ifs23038.network.todos.service
 
-package org.delcom.pam_p5_ifs23038.network.todos.service
-
 import okhttp3.MultipartBody
 import org.delcom.pam_p5_ifs23038.helper.SuspendHelper
 import org.delcom.pam_p5_ifs23038.network.data.ResponseMessage
