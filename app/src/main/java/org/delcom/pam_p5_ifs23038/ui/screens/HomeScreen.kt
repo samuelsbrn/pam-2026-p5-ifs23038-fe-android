@@ -46,6 +46,7 @@ import org.delcom.pam_p5_ifs23038.ui.viewmodels.AuthLogoutUIState
 import org.delcom.pam_p5_ifs23038.ui.viewmodels.AuthUIState
 import org.delcom.pam_p5_ifs23038.ui.viewmodels.AuthViewModel
 import org.delcom.pam_p5_ifs23038.ui.viewmodels.TodoViewModel
+import org.delcom.pam_p5_ifs23038.ui.viewmodels.TodosUIState
 
 @Composable
 fun HomeScreen(
@@ -55,6 +56,7 @@ fun HomeScreen(
 ) {
     // Ambil data dari viewmodel
     val uiStateAuth by authViewModel.uiState.collectAsState()
+    val uiStateTodo by todoViewModel.uiState.collectAsState()
 
     var isLoading by remember { mutableStateOf(false) }
     var isFreshToken by remember { mutableStateOf(false) }
@@ -110,6 +112,13 @@ fun HomeScreen(
         }
     }
 
+    // Effect untuk mengambil data Todos dari API ketika token sudah tersedia
+    LaunchedEffect(authToken) {
+        authToken?.let { token ->
+            todoViewModel.getAllTodos(token)
+        }
+    }
+
     if (isLoading || authToken == null || isFreshToken) {
         LoadingUI()
         return
@@ -149,7 +158,23 @@ fun HomeScreen(
             modifier = Modifier
                 .weight(1f)
         ) {
-            HomeUI()
+            var totalCount = 0
+            var doneCount = 0
+            var pendingCount = 0
+
+            // Hitung data ketika statusnya Success
+            if (uiStateTodo.todos is TodosUIState.Success) {
+                val listTodo = (uiStateTodo.todos as TodosUIState.Success).data
+                totalCount = listTodo.size
+                doneCount = listTodo.count { it.isDone }
+                pendingCount = totalCount - doneCount
+            }
+
+            HomeUI(
+                totalTodos = totalCount,
+                doneTodos = doneCount,
+                pendingTodos = pendingCount
+            )
         }
         // Bottom Nav
         BottomNavComponent(navController = navController)
@@ -157,11 +182,11 @@ fun HomeScreen(
 }
 
 @Composable
-fun HomeUI() {
-    val totalTodos = 0
-    val doneTodos = 0
-    val pendingTodos = 0
-
+fun HomeUI(
+    totalTodos: Int = 0,
+    doneTodos: Int = 0,
+    pendingTodos: Int = 0
+) {
     Column(
         modifier = Modifier.padding(top = 16.dp)
     )

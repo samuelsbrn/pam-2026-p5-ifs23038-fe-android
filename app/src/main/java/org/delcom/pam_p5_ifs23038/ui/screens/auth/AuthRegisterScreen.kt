@@ -1,4 +1,4 @@
-package org.delcom.pam_p5_ifs18005.ui.screens.auth
+package org.delcom.pam_p5_ifs23038.ui.screens.auth
 
 import android.content.res.Configuration
 import androidx.compose.foundation.Image
@@ -67,14 +67,14 @@ import androidx.navigation.NavHostController
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import org.delcom.pam_p5_ifs18005.R
-import org.delcom.pam_p5_ifs18005.helper.ConstHelper
-import org.delcom.pam_p5_ifs18005.helper.RouteHelper
-import org.delcom.pam_p5_ifs18005.helper.SuspendHelper
-import org.delcom.pam_p5_ifs18005.ui.components.LoadingUI
-import org.delcom.pam_p5_ifs18005.ui.theme.DelcomTheme
-import org.delcom.pam_p5_ifs18005.ui.viewmodels.AuthActionUIState
-import org.delcom.pam_p5_ifs18005.ui.viewmodels.AuthViewModel
+import org.delcom.pam_p5_ifs23038.R
+import org.delcom.pam_p5_ifs23038.helper.ConstHelper
+import org.delcom.pam_p5_ifs23038.helper.RouteHelper
+import org.delcom.pam_p5_ifs23038.helper.SuspendHelper
+import org.delcom.pam_p5_ifs23038.ui.components.LoadingUI
+import org.delcom.pam_p5_ifs23038.ui.theme.DelcomTheme
+import org.delcom.pam_p5_ifs23038.ui.viewmodels.AuthActionUIState
+import org.delcom.pam_p5_ifs23038.ui.viewmodels.AuthViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
