@@ -59,6 +59,10 @@ class TodoViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(UIStateTodo())
     val uiState = _uiState.asStateFlow()
 
+    private var currentPage = 1
+    private var isLastPage = false
+    private var currentTodosList = mutableListOf<ResponseTodoData>()
+
     fun getProfile(authToken: String) {
         viewModelScope.launch {
             _uiState.update {
@@ -85,6 +89,53 @@ class TodoViewModel @Inject constructor(
                 it.copy(
                     profile = tmpState
                 )
+            }
+        }
+    }
+
+    fun getAllTodos(
+        authToken: String,
+        search: String? = null,
+        isDone: Boolean? = null,
+        isLoadMore: Boolean = false
+    ) {
+        if (!isLoadMore) {
+            currentPage = 1
+            isLastPage = false
+            currentTodosList.clear()
+            _uiState.update { it.copy(todos = TodosUIState.Loading) }
+        }
+
+        if (isLastPage) return
+
+        viewModelScope.launch {
+            _uiState.update { state ->
+                val tmpState = runCatching {
+                    // Panggil repository dengan page saat ini dan perPage = 10
+                    repository.getTodos(authToken, search, isDone, currentPage, 10)
+                }.fold(
+                    onSuccess = { response ->
+                        if (response.status == "success") {
+                            val newTodos = response.data!!.todos
+                            // Jika data yang didapat kurang dari 10, tandanya ini halaman terakhir
+                            if (newTodos.size < 10) {
+                                isLastPage = true
+                            }
+
+                            currentTodosList.addAll(newTodos)
+                            currentPage++
+
+                            TodosUIState.Success(currentTodosList.toList())
+                        } else {
+                            TodosUIState.Error(response.message)
+                        }
+                    },
+                    onFailure = { error ->
+                        TodosUIState.Error(error.message ?: "Unknown error")
+                    }
+                )
+
+                state.copy(todos = tmpState)
             }
         }
     }

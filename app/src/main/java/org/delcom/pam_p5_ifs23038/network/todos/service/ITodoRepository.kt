@@ -69,7 +69,10 @@ interface ITodoRepository {
 
     suspend fun getTodos(
         authToken: String,
-        search: String? = null
+        search: String? = null,
+        isDone: Boolean? = null,
+        page: Int? = null,
+        perPage: Int? = null
     ): ResponseMessage<ResponseTodos?>
 
     suspend fun postTodo(

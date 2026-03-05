@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
@@ -28,6 +29,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -66,31 +68,28 @@ fun TodosScreen(
     authViewModel: AuthViewModel,
     todoViewModel: TodoViewModel
 ) {
-    // Ambil data dari viewmodel
     val uiStateAuth by authViewModel.uiState.collectAsState()
     val uiStateTodo by todoViewModel.uiState.collectAsState()
 
     var isLoading by remember { mutableStateOf(false) }
-    var searchQuery by remember {
-        mutableStateOf(TextFieldValue(""))
-    }
-
-    // Muat data
+    var searchQuery by remember { mutableStateOf(TextFieldValue("")) }
+    var filterIsDone by remember { mutableStateOf<Boolean?>(null) }
     var todos by remember { mutableStateOf<List<ResponseTodoData>>(emptyList()) }
     var authToken by remember { mutableStateOf<String?>(null) }
 
-    fun fetchTodosData() {
-        isLoading = true
+    fun fetchTodosData(isLoadMore: Boolean = false) {
+        if (!isLoadMore) isLoading = true
+        authToken = (uiStateAuth.auth as? AuthUIState.Success)?.data?.authToken
 
-        authToken = (uiStateAuth.auth as AuthUIState.Success).data.authToken
-
-        todoViewModel.getAllTodos(authToken ?: "", searchQuery.text)
+        todoViewModel.getAllTodos(
+            authToken = authToken ?: "",
+            search = searchQuery.text,
+            isDone = filterIsDone,
+            isLoadMore = isLoadMore
+        )
     }
 
-    // Picu pengambilan data todos
     LaunchedEffect(Unit) {
-        isLoading = true
-
         if (uiStateAuth.auth !is AuthUIState.Success) {
             RouteHelper.to(
                 navController,
@@ -99,15 +98,12 @@ fun TodosScreen(
             )
             return@LaunchedEffect
         }
-
-        fetchTodosData()
+        fetchTodosData(isLoadMore = false)
     }
 
-    // Picu ketika terjadi perubahan data todos
     LaunchedEffect(uiStateTodo.todos) {
         if (uiStateTodo.todos !is TodosUIState.Loading) {
             isLoading = false
-
             todos = if (uiStateTodo.todos is TodosUIState.Success) {
                 (uiStateTodo.todos as TodosUIState.Success).data
             } else {
@@ -116,7 +112,7 @@ fun TodosScreen(
         }
     }
 
-    fun onLogout(token: String){
+    fun onLogout(token: String) {
         isLoading = true
         authViewModel.logout(token)
     }
@@ -131,13 +127,11 @@ fun TodosScreen(
         }
     }
 
-    // Tampilkan halaman loading
-    if (isLoading) {
+    if (isLoading && todos.isEmpty()) {
         LoadingUI()
         return
     }
 
-    // Menu Top App Bar
     val menuItems = listOf(
         TopAppBarMenuItem(
             text = "Profile",
@@ -166,7 +160,6 @@ fun TodosScreen(
             .fillMaxWidth()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        // Top App Bar
         TopAppBarComponent(
             navController = navController,
             title = "Todos",
@@ -178,49 +171,79 @@ fun TodosScreen(
                 searchQuery = query
             },
             onSearchAction = {
-                fetchTodosData()
+                fetchTodosData(isLoadMore = false)
             }
         )
-        // Content
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(50))
+                    .background(if (filterIsDone == null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant)
+                    .clickable { filterIsDone = null; fetchTodosData(isLoadMore = false) }
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+            ) {
+                Text("Semua", color = if (filterIsDone == null) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(50))
+                    .background(if (filterIsDone == true) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant)
+                    .clickable { filterIsDone = true; fetchTodosData(isLoadMore = false) }
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+            ) {
+                Text("Selesai", color = if (filterIsDone == true) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(50))
+                    .background(if (filterIsDone == false) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant)
+                    .clickable { filterIsDone = false; fetchTodosData(isLoadMore = false) }
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+            ) {
+                Text("Belum Selesai", color = if (filterIsDone == false) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+
         Box(
             modifier = Modifier
                 .weight(1f)
         ) {
             TodosUI(
                 todos = todos,
-                onOpen = ::onOpen
+                onOpen = ::onOpen,
+                onLoadMore = { fetchTodosData(isLoadMore = true) }
             )
 
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-            )
-            {
-                // Floating Action Button
+                modifier = Modifier.fillMaxSize()
+            ) {
                 FloatingActionButton(
                     onClick = {
                         RouteHelper.to(
                             navController,
-                            ConstHelper.RouteNames
-                                .TodosAdd
-                                .path
+                            ConstHelper.RouteNames.TodosAdd.path
                         )
                     },
                     modifier = Modifier
-                        .align(Alignment.BottomEnd) // pojok kanan bawah
-                        .padding(16.dp) // jarak dari tepi
-                    ,
+                        .align(Alignment.BottomEnd)
+                        .padding(16.dp),
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary
                 ) {
                     Icon(
                         imageVector = Icons.Default.Add,
-                        contentDescription = "Tambah Tumbuhan"
+                        contentDescription = "Tambah Todo"
                     )
                 }
             }
         }
-        // Bottom Nav
         BottomNavComponent(navController = navController)
     }
 }
@@ -228,9 +251,13 @@ fun TodosScreen(
 @Composable
 fun TodosUI(
     todos: List<ResponseTodoData>,
-    onOpen: (String) -> Unit
+    onOpen: (String) -> Unit,
+    onLoadMore: () -> Unit
 ) {
+    val listState = rememberLazyListState()
+
     LazyColumn(
+        state = listState,
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp),
@@ -241,6 +268,19 @@ fun TodosUI(
                 todo,
                 onOpen
             )
+        }
+    }
+
+    val shouldLoadMore = remember {
+        derivedStateOf {
+            val lastVisibleItem = listState.layoutInfo.visibleItemsInfo.lastOrNull()
+            lastVisibleItem != null && lastVisibleItem.index >= listState.layoutInfo.totalItemsCount - 1
+        }
+    }
+
+    LaunchedEffect(shouldLoadMore.value) {
+        if (shouldLoadMore.value && todos.isNotEmpty()) {
+            onLoadMore()
         }
     }
 
@@ -286,7 +326,6 @@ fun TodoItemUI(
                 .fillMaxWidth()
                 .padding(12.dp)
         ) {
-
             AsyncImage(
                 model = ToolsHelper.getTodoImage(todo.id, todo.updatedAt),
                 contentDescription = todo.title,
@@ -351,10 +390,4 @@ fun TodoItemUI(
 @Preview(showBackground = true, name = "Light Mode")
 @Composable
 fun PreviewTodosUI() {
-//    DelcomTheme {
-//        TodosUI(
-//            todos = DummyData.getTodosData(),
-//            onOpen = {}
-//        )
-//    }
 }

@@ -103,10 +103,13 @@ class TodoRepository(
 
     override suspend fun getTodos(
         authToken: String,
-        search: String?
+        search: String? ,
+        isDone: Boolean? ,
+        page: Int?,
+        perPage: Int?
     ): ResponseMessage<ResponseTodos?> {
         return SuspendHelper.safeApiCall {
-            apiService.getTodos("Bearer $authToken", search)
+            apiService.getTodos("Bearer $authToken", search, isDone, page, perPage)
         }
     }
 
