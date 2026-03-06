@@ -81,11 +81,11 @@ class TodoViewModel @Inject constructor(
     }
 
     // UPDATE: Membutuhkan name dan username
-    fun putUserMe(authToken: String, name: String, username: String) {
+    fun putUserMe(authToken: String, name: String, username: String, about: String?) {
         viewModelScope.launch {
             _uiState.update { it.copy(profileChange = TodoActionUIState.Loading) }
             _uiState.update { state ->
-                val tmpState = runCatching { repository.putUserMe(authToken, RequestUserChange(name = name, username = username)) }
+                val tmpState = runCatching { repository.putUserMe(authToken, RequestUserChange(name = name, username = username, about = about)) }
                     .fold(
                         onSuccess = { if (it.status == "success") TodoActionUIState.Success(it.message) else TodoActionUIState.Error(it.message) },
                         onFailure = { TodoActionUIState.Error(it.message ?: "Unknown error") }
@@ -130,6 +130,7 @@ class TodoViewModel @Inject constructor(
         authToken: String,
         search: String? = null,
         isDone: Boolean? = null,
+        urgency: String? = null,
         isLoadMore: Boolean = false
     ) {
         if (!isLoadMore) {
@@ -144,7 +145,7 @@ class TodoViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { state ->
                 val tmpState = runCatching {
-                    repository.getTodos(authToken, search, isDone, currentPage, 10)
+                    repository.getTodos(authToken, search, isDone, urgency, currentPage, 10)
                 }.fold(
                     onSuccess = { response ->
                         if (response.status == "success") {
@@ -168,11 +169,11 @@ class TodoViewModel @Inject constructor(
         }
     }
 
-    fun getAllTodos(authToken: String, search: String? = null) {
+    fun getAllTodos(authToken: String, search: String? = null, urgency: String? = null) {
         viewModelScope.launch {
             _uiState.update { it.copy(todos = TodosUIState.Loading) }
             _uiState.update { state ->
-                val tmpState = runCatching { repository.getTodos(authToken, search) }
+                val tmpState = runCatching { repository.getTodos(authToken, search, null, urgency) }
                     .fold(
                         onSuccess = { if (it.status == "success") TodosUIState.Success(it.data!!.todos) else TodosUIState.Error(it.message) },
                         onFailure = { TodosUIState.Error(it.message ?: "Unknown error") }
@@ -182,11 +183,11 @@ class TodoViewModel @Inject constructor(
         }
     }
 
-    fun postTodo(authToken: String, title: String, description: String) {
+    fun postTodo(authToken: String, title: String, description: String, urgency: String) {
         viewModelScope.launch {
             _uiState.update { it.copy(todoAdd = TodoActionUIState.Loading) }
             _uiState.update { state ->
-                val tmpState = runCatching { repository.postTodo(authToken, RequestTodo(title = title, description = description)) }
+                val tmpState = runCatching { repository.postTodo(authToken, RequestTodo(title = title, description = description, urgency = urgency)) }
                     .fold(
                         onSuccess = { if (it.status == "success") TodoActionUIState.Success(it.message) else TodoActionUIState.Error(it.message) },
                         onFailure = { TodoActionUIState.Error(it.message ?: "Unknown error") }
@@ -210,11 +211,11 @@ class TodoViewModel @Inject constructor(
         }
     }
 
-    fun putTodo(authToken: String, todoId: String, title: String, description: String, isDone: Boolean) {
+    fun putTodo(authToken: String, todoId: String, title: String, description: String, isDone: Boolean, urgency: String) {
         viewModelScope.launch {
             _uiState.update { it.copy(todoChange = TodoActionUIState.Loading) }
             _uiState.update { state ->
-                val tmpState = runCatching { repository.putTodo(authToken, todoId, RequestTodo(title = title, description = description, isDone = isDone)) }
+                val tmpState = runCatching { repository.putTodo(authToken, todoId, RequestTodo(title = title, description = description, isDone = isDone, urgency = urgency)) }
                     .fold(
                         onSuccess = { if (it.status == "success") TodoActionUIState.Success(it.message) else TodoActionUIState.Error(it.message) },
                         onFailure = { TodoActionUIState.Error(it.message ?: "Unknown error") }

@@ -71,6 +71,7 @@ interface ITodoRepository {
         authToken: String,
         search: String? = null,
         isDone: Boolean? = null,
+        urgency: String? = null,
         page: Int? = null,
         perPage: Int? = null
     ): ResponseMessage<ResponseTodos?>

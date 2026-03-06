@@ -7,14 +7,17 @@ import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -32,7 +35,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -79,18 +81,15 @@ fun TodosDetailScreen(
     todoViewModel: TodoViewModel,
     todoId: String
 ) {
-    // Ambil data dari viewmodel
     val uiStateTodo by todoViewModel.uiState.collectAsState()
     val uiStateAuth by authViewModel.uiState.collectAsState()
 
     var isLoading by remember { mutableStateOf(false) }
     var isConfirmDelete by remember { mutableStateOf(false) }
 
-    // Muat data
     var todo by remember { mutableStateOf<ResponseTodoData?>(null) }
     val authToken = remember { mutableStateOf<String?>(null) }
 
-    // Dapatkan tumbuhan berdasarkan ID
     LaunchedEffect(Unit) {
         isLoading = true
 
@@ -105,7 +104,6 @@ fun TodosDetailScreen(
 
         authToken.value = (uiStateAuth.auth as AuthUIState.Success).data.authToken
 
-        // Reset status todo action
         uiStateTodo.todoDelete = TodoActionUIState.Loading
         uiStateTodo.todoChangeCover = TodoActionUIState.Loading
         uiStateTodo.todo = TodoUIState.Loading
@@ -113,7 +111,6 @@ fun TodosDetailScreen(
         todoViewModel.getTodoById(authToken.value!!, todoId)
     }
 
-    // Picu ulang ketika data berubah
     LaunchedEffect(uiStateTodo.todo) {
         if (uiStateTodo.todo !is TodoUIState.Loading) {
             if (uiStateTodo.todo is TodoUIState.Success) {
@@ -213,13 +210,11 @@ fun TodosDetailScreen(
         }
     }
 
-    // Tampilkan halaman loading
     if (isLoading || todo == null) {
         LoadingUI()
         return
     }
 
-    // Menu item details
     val detailMenuItems = listOf(
         TopAppBarMenuItem(
             text = "Ubah Data",
@@ -249,24 +244,20 @@ fun TodosDetailScreen(
             .background(MaterialTheme.colorScheme.background)
     )
     {
-        // Top App Bar
         TopAppBarComponent(
             navController = navController,
             title = todo!!.title,
             showBackButton = true,
             customMenuItems = detailMenuItems
         )
-        // Content
         Box(
             modifier = Modifier
                 .weight(1f)
         ) {
-            // Content UI
             TodosDetailUI(
                 todo = todo!!,
                 onChangeCover = ::onChangeCover,
             )
-            // Bottom Dialog to Confirmation Delete
             BottomDialog(
                 type = BottomDialogType.ERROR,
                 show = isConfirmDelete,
@@ -281,7 +272,6 @@ fun TodosDetailScreen(
                 destructiveAction = true
             )
         }
-        // Bottom Nav
         BottomNavComponent(navController = navController)
     }
 }
@@ -307,7 +297,6 @@ fun TodosDetailUI(
             .verticalScroll(rememberScrollState())
     )
     {
-        // Gambar
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -319,7 +308,6 @@ fun TodosDetailUI(
                 modifier = Modifier
                     .fillMaxSize()
             ) {
-                // Cover Image
                 Box(
                     modifier = Modifier
                         .size(150.dp)
@@ -346,7 +334,6 @@ fun TodosDetailUI(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // Text di bawah gambar
                 Text(
                     text = if (dataFile == null)
                         "Sentuh cover untuk mengubah"
@@ -359,7 +346,6 @@ fun TodosDetailUI(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // Tombol Simpan muncul jika ada gambar baru
                 if (dataFile != null) {
                     Button(
                         onClick = {
@@ -395,9 +381,9 @@ fun TodosDetailUI(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            Column(
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally
+                horizontalArrangement = Arrangement.Center
             ) {
                 Box(
                     contentAlignment = Alignment.Center,
@@ -407,9 +393,9 @@ fun TodosDetailUI(
                             if (todo.isDone)
                                 MaterialTheme.colorScheme.secondaryContainer
                             else
-                                MaterialTheme.colorScheme.tertiaryContainer
+                                MaterialTheme.colorScheme.errorContainer
                         )
-                        .padding(horizontal = 12.dp, vertical = 6.dp)
+                        .padding(horizontal = 16.dp, vertical = 6.dp)
                 ) {
                     Text(
                         text = if (todo.isDone) "Selesai" else "Belum Selesai",
@@ -418,13 +404,29 @@ fun TodosDetailUI(
                         color = if (todo.isDone)
                             MaterialTheme.colorScheme.onSecondaryContainer
                         else
-                            MaterialTheme.colorScheme.onTertiaryContainer
+                            MaterialTheme.colorScheme.onErrorContainer
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(50))
+                        .background(MaterialTheme.colorScheme.tertiaryContainer)
+                        .padding(horizontal = 16.dp, vertical = 6.dp)
+                ) {
+                    Text(
+                        text = "Urgensi: ${todo.urgency ?: "Low"}", // Fallback null safety
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onTertiaryContainer
                     )
                 }
             }
         }
 
-        // Deskripsi
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -454,8 +456,5 @@ fun TodosDetailUI(
 @Composable
 fun PreviewTodosDetailUI() {
     DelcomTheme {
-//        TodosDetailUI(
-//            todo = DummyData.getTodosData()[0]
-//        )
     }
 }

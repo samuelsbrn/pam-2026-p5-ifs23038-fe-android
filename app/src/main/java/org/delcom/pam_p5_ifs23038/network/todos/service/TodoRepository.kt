@@ -105,11 +105,12 @@ class TodoRepository(
         authToken: String,
         search: String? ,
         isDone: Boolean? ,
+        urgency: String? ,
         page: Int?,
         perPage: Int?
     ): ResponseMessage<ResponseTodos?> {
         return SuspendHelper.safeApiCall {
-            apiService.getTodos("Bearer $authToken", search, isDone, page, perPage)
+            apiService.getTodos("Bearer $authToken", search, isDone, urgency, page, perPage)
         }
     }
 

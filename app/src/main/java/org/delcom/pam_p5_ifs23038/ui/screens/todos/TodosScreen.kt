@@ -2,6 +2,7 @@ package org.delcom.pam_p5_ifs23038.ui.screens.todos
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -13,8 +14,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
@@ -74,6 +77,7 @@ fun TodosScreen(
     var isLoading by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf(TextFieldValue("")) }
     var filterIsDone by remember { mutableStateOf<Boolean?>(null) }
+    var filterUrgency by remember { mutableStateOf<String?>(null) }
     var todos by remember { mutableStateOf<List<ResponseTodoData>>(emptyList()) }
     var authToken by remember { mutableStateOf<String?>(null) }
 
@@ -85,6 +89,7 @@ fun TodosScreen(
             authToken = authToken ?: "",
             search = searchQuery.text,
             isDone = filterIsDone,
+            urgency = filterUrgency,
             isLoadMore = isLoadMore
         )
     }
@@ -178,6 +183,7 @@ fun TodosScreen(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
+                .horizontalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp, vertical = 8.dp)
         ) {
             Box(
@@ -208,6 +214,26 @@ fun TodosScreen(
                     .padding(horizontal = 16.dp, vertical = 8.dp)
             ) {
                 Text("Belum Selesai", color = if (filterIsDone == false) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+
+        LazyRow(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 4.dp)
+        ) {
+            val urgencies = listOf(null, "Low", "Medium", "High")
+            items(urgencies) { level ->
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(50))
+                        .background(if (filterUrgency == level) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.surfaceVariant)
+                        .clickable { filterUrgency = level; fetchTodosData(isLoadMore = false) }
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                ) {
+                    Text(level ?: "Semua Urgensi", color = if (filterUrgency == level) MaterialTheme.colorScheme.onTertiary else MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                Spacer(modifier = Modifier.width(8.dp))
             }
         }
 
@@ -360,27 +386,46 @@ fun TodoItemUI(
 
                 Spacer(modifier = Modifier.height(4.dp))
 
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(50))
-                        .background(
-                            if (todo.isDone)
-                                MaterialTheme.colorScheme.secondaryContainer
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(50))
+                            .background(
+                                if (todo.isDone)
+                                    MaterialTheme.colorScheme.secondaryContainer
+                                else
+                                    MaterialTheme.colorScheme.errorContainer
+                            )
+                            .padding(horizontal = 10.dp, vertical = 4.dp)
+                    ) {
+                        Text(
+                            text = if (todo.isDone) "Selesai" else "Belum",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = if (todo.isDone)
+                                MaterialTheme.colorScheme.onSecondaryContainer
                             else
-                                MaterialTheme.colorScheme.tertiaryContainer
+                                MaterialTheme.colorScheme.onErrorContainer
                         )
-                        .padding(horizontal = 12.dp, vertical = 6.dp)
-                ) {
-                    Text(
-                        text = if (todo.isDone) "Selesai" else "Belum Selesai",
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = if (todo.isDone)
-                            MaterialTheme.colorScheme.onSecondaryContainer
-                        else
-                            MaterialTheme.colorScheme.onTertiaryContainer
-                    )
+                    }
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(50))
+                            .background(MaterialTheme.colorScheme.tertiaryContainer)
+                            .padding(horizontal = 10.dp, vertical = 4.dp)
+                    ) {
+                        Text(
+                            text = todo.urgency ?: "Low", // Fallback null safety
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onTertiaryContainer
+                        )
+                    }
                 }
             }
         }

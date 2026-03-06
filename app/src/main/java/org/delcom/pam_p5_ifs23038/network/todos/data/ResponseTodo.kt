@@ -20,6 +20,7 @@ data class ResponseTodoData(
     val description: String,
     val isDone: Boolean = false,
     val cover: String? = null,
+    val urgency: String? = "Low",
     val createdAt: String = "",
     var updatedAt: String = ""
 )

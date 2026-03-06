@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -20,6 +21,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -88,6 +90,7 @@ fun TodosAddScreen(
     fun onSave(
         title: String,
         description: String,
+        urgency: String
     ) {
         if(authToken.value == null){
             return
@@ -98,12 +101,14 @@ fun TodosAddScreen(
         tmpTodo = ResponseTodoData(
             title = title,
             description = description,
+            urgency = urgency
         )
 
         todoViewModel.postTodo(
             authToken = authToken.value!!,
             title = title,
             description = description,
+            urgency = urgency
         )
     }
 
@@ -171,6 +176,7 @@ fun TodosAddUI(
     tmpTodo: ResponseTodoData?,
     onSave: (
         String,
+        String,
         String
     ) -> Unit
 ) {
@@ -178,6 +184,7 @@ fun TodosAddUI(
 
     var dataTitle by remember { mutableStateOf(tmpTodo?.title ?: "") }
     var dataDescription by remember { mutableStateOf(tmpTodo?.description ?: "") }
+    var dataUrgency by remember { mutableStateOf(tmpTodo?.urgency ?: "Low") }
 
     Column(
         modifier = Modifier
@@ -239,6 +246,32 @@ fun TodosAddUI(
             minLines = 3
         )
 
+        // Urgency Level
+        Column(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(
+                text = "Urgency Level",
+                color = MaterialTheme.colorScheme.onPrimaryContainer
+            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                listOf("Low", "Medium", "High").forEach { level ->
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(end = 12.dp)
+                    ) {
+                        RadioButton(
+                            selected = dataUrgency == level,
+                            onClick = { dataUrgency = level }
+                        )
+                        Text(text = level)
+                    }
+                }
+            }
+        }
+
         Spacer(modifier = Modifier.height(64.dp))
     }
 
@@ -269,7 +302,8 @@ fun TodosAddUI(
 
                 onSave(
                     dataTitle,
-                    dataDescription
+                    dataDescription,
+                    dataUrgency
                 )
             },
             modifier = Modifier

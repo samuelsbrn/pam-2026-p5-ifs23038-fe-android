@@ -191,8 +191,8 @@ fun ProfileScreen(
                     val multipart = ToolsHelper.uriToMultipart(context, file, "file")
                     todoViewModel.putUserMePhoto(authToken ?: "", multipart)
                 },
-                onEditProfile = { name, username ->
-                    todoViewModel.putUserMe(authToken ?: "", name, username)
+                onEditProfile = { name, username, about ->
+                    todoViewModel.putUserMe(authToken ?: "", name, username, about)
                 },
                 onChangePassword = { oldPass, newPass ->
                     todoViewModel.putUserMePassword(authToken ?: "", oldPass, newPass)
@@ -207,11 +207,13 @@ fun ProfileScreen(
 fun EditProfileDialog(
     currentName: String,
     currentUsername: String,
+    currentAbout: String?,
     onDismiss: () -> Unit,
-    onConfirm: (String, String) -> Unit
+    onConfirm: (String, String, String?) -> Unit
 ) {
     var name by remember { mutableStateOf(currentName) }
     var username by remember { mutableStateOf(currentUsername) }
+    var about by remember { mutableStateOf(currentAbout ?: "") }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -233,10 +235,18 @@ fun EditProfileDialog(
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = about,
+                    onValueChange = { about = it },
+                    label = { Text("Tentang") },
+                    maxLines = 3,
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
         },
         confirmButton = {
-            TextButton(onClick = { onConfirm(name, username) }) { Text("Simpan") }
+            TextButton(onClick = { onConfirm(name, username, about.ifBlank { null }) }) { Text("Simpan") }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) { Text("Batal") }
@@ -289,7 +299,7 @@ fun ChangePasswordDialog(
 fun ProfileUI(
     profile: ResponseUserData,
     onChangePhoto: (Uri) -> Unit,
-    onEditProfile: (String, String) -> Unit,
+    onEditProfile: (String, String, String?) -> Unit,
     onChangePassword: (String, String) -> Unit
 ) {
     var showEditProfile by remember { mutableStateOf(false) }
@@ -307,10 +317,11 @@ fun ProfileUI(
         EditProfileDialog(
             currentName = profile.name,
             currentUsername = profile.username,
+            currentAbout = profile.about,
             onDismiss = { showEditProfile = false },
-            onConfirm = { name, username ->
+            onConfirm = { name, username, about ->
                 showEditProfile = false
-                onEditProfile(name, username)
+                onEditProfile(name, username, about)
             }
         )
     }
@@ -403,6 +414,14 @@ fun ProfileUI(
             Spacer(modifier = Modifier.height(16.dp))
             Text(text = profile.name, fontSize = 22.sp, fontWeight = FontWeight.Bold)
             Text(text = "@${profile.username}", fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = profile.about ?: "Belum ada info tentang",
+                fontSize = 14.sp,
+                color = MaterialTheme.colorScheme.onSurface,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(horizontal = 24.dp)
+            )
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -435,9 +454,9 @@ fun ProfileUI(
 fun PreviewProfileUI() {
     DelcomTheme {
         ProfileUI(
-            profile = ResponseUserData(id = "", name = "Samuel Sibarani", username = "samuelsbrn", createdAt = "", updatedAt = ""),
+            profile = ResponseUserData(id = "", name = "Samuel Sibarani", username = "samuelsbrn", about = "Suka coding backend", createdAt = "", updatedAt = ""),
             onChangePhoto = {},
-            onEditProfile = { _, _ -> },
+            onEditProfile = { _, _, _ -> },
             onChangePassword = { _, _ -> }
         )
     }

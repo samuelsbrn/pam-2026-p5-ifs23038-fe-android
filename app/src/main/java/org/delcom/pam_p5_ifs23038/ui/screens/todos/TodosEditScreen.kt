@@ -65,17 +65,13 @@ fun TodosEditScreen(
     todoViewModel: TodoViewModel,
     todoId: String
 ) {
-    // Ambil data dari viewmodel
     val uiStateAuth by authViewModel.uiState.collectAsState()
     val uiStateTodo by todoViewModel.uiState.collectAsState()
 
     var isLoading by remember { mutableStateOf(false) }
-
-    // Muat data
     var todo by remember { mutableStateOf<ResponseTodoData?>(null) }
     val authToken = remember { mutableStateOf<String?>(null) }
 
-    // Dapatkan tumbuhan berdasarkan ID
     LaunchedEffect(Unit) {
         isLoading = true
 
@@ -93,11 +89,9 @@ fun TodosEditScreen(
         uiStateTodo.todo = TodoUIState.Loading
         uiStateTodo.todoChange = TodoActionUIState.Loading
 
-        // Reset status todo action
         todoViewModel.getTodoById(authToken.value!!, todoId)
     }
 
-    // Picu ulang ketika data tumbuhan berubah
     LaunchedEffect(uiStateTodo.todo) {
         if (uiStateTodo.todo !is TodoUIState.Loading) {
             if (uiStateTodo.todo is TodoUIState.Success) {
@@ -110,11 +104,11 @@ fun TodosEditScreen(
         }
     }
 
-    // Simpan perubahan data
     fun onSave(
         title: String,
         description: String,
         isDone: Boolean,
+        urgency: String
     ) {
         isLoading = true
 
@@ -123,7 +117,8 @@ fun TodosEditScreen(
             todoId = todoId,
             title = title,
             description = description,
-            isDone = isDone
+            isDone = isDone,
+            urgency = urgency
         )
     }
 
@@ -159,7 +154,6 @@ fun TodosEditScreen(
         }
     }
 
-    // Tampilkan halaman loading
     if (isLoading || todo == null) {
         LoadingUI()
         return
@@ -170,13 +164,11 @@ fun TodosEditScreen(
             .fillMaxWidth()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        // Top App Bar
         TopAppBarComponent(
             navController = navController,
             title = "Ubah Data",
             showBackButton = true,
         )
-        // Content
         Box(
             modifier = Modifier
                 .weight(1f)
@@ -186,7 +178,6 @@ fun TodosEditScreen(
                 onSave = ::onSave
             )
         }
-        // Bottom Nav
         BottomNavComponent(navController = navController)
     }
 }
@@ -198,6 +189,7 @@ fun TodosEditUI(
         String,
         String,
         Boolean,
+        String
     ) -> Unit
 ) {
     val alertState = remember { mutableStateOf(AlertState()) }
@@ -205,6 +197,7 @@ fun TodosEditUI(
     var dataTitle by remember { mutableStateOf(todo.title) }
     var dataDescription by remember { mutableStateOf(todo.description) }
     var dataIsDone by remember { mutableStateOf(todo.isDone) }
+    var dataUrgency by remember { mutableStateOf(todo.urgency ?: "Low") } // Fallback null safety
 
     Column(
         modifier = Modifier
@@ -213,7 +206,6 @@ fun TodosEditUI(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Nama
         OutlinedTextField(
             value = dataTitle,
             onValueChange = { dataTitle = it },
@@ -238,7 +230,6 @@ fun TodosEditUI(
             ),
         )
 
-        // Is Done
         Column(
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -266,7 +257,6 @@ fun TodosEditUI(
             }
         }
 
-        // Deskripsi
         OutlinedTextField(
             value = dataDescription,
             onValueChange = { dataDescription = it },
@@ -294,6 +284,31 @@ fun TodosEditUI(
             minLines = 3
         )
 
+        Column(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(
+                text = "Urgency Level",
+                color = MaterialTheme.colorScheme.onPrimaryContainer
+            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                listOf("Low", "Medium", "High").forEach { level ->
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(end = 12.dp)
+                    ) {
+                        RadioButton(
+                            selected = dataUrgency == level,
+                            onClick = { dataUrgency = level }
+                        )
+                        Text(text = level)
+                    }
+                }
+            }
+        }
+
         Spacer(modifier = Modifier.height(64.dp))
     }
 
@@ -301,7 +316,6 @@ fun TodosEditUI(
         modifier = Modifier
             .fillMaxSize()
     ) {
-        // Floating Action Button
         FloatingActionButton(
             onClick = {
                 if (dataTitle.isEmpty()) {
@@ -325,13 +339,13 @@ fun TodosEditUI(
                 onSave(
                     dataTitle,
                     dataDescription,
-                    dataIsDone
+                    dataIsDone,
+                    dataUrgency
                 )
             },
             modifier = Modifier
-                .align(Alignment.BottomEnd) // pojok kanan bawah
-                .padding(16.dp) // jarak dari tepi
-            ,
+                .align(Alignment.BottomEnd)
+                .padding(16.dp),
             containerColor = MaterialTheme.colorScheme.primary,
             contentColor = MaterialTheme.colorScheme.onPrimary
         ) {
@@ -369,10 +383,4 @@ fun TodosEditUI(
 @Preview(showBackground = true, name = "Light Mode")
 @Composable
 fun PreviewTodosEditUI() {
-//    DelcomTheme {
-//        TodosEditUI(
-//            todos = DummyData.getTodosEditData(),
-//            onOpen = {}
-//        )
-//    }
 }

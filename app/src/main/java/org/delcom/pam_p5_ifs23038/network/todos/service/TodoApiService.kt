@@ -98,6 +98,7 @@ interface TodoApiService {
         @Header("Authorization") authToken: String,
         @Query("search") search: String? = null,
         @Query("is_done") isDone: Boolean? = null,
+        @Query("urgency") urgency: String? = null,
         @Query("page") page: Int? = null,
         @Query("perPage") perPage: Int? = null
     ): ResponseMessage<ResponseTodos?>
